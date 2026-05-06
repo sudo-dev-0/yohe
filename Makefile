@@ -1,6 +1,6 @@
 # -*- makefile -*- --- yohe, An editor made in C, for C.
 #
-#                         Version: v0.11                           ++++++++++++
+#                         Version: v0.12                           ++++++++++++
 #  
 #                   Documentation: Refer to README.                ++++++++++++
 #
@@ -12,6 +12,7 @@
 #	- (v0.10) Added a Makefile
 #
 #  ==== Fixed ====
+#	- (v0.12) Fixed gitignore by including bin/
 #	- (v0.11) Fixed `make strip` 
 #  
 #  ==== Removed ====
@@ -19,7 +20,7 @@
 #
 
 PROJECT_NAME    := yohe
-PROJECT_VERSION := v0.11
+PROJECT_VERSION := v0.12
 
 CSTD := c11
 COPT := 2 	# Release optimization.
@@ -55,9 +56,6 @@ CFLAGS_RELEASE_ADD := -O2 -flto -march=native -mtune=native \
 LDFLAGS_RELEASE := -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,-z,separate-code \
 		   -pie
 
-# ===================================================================
-# Architecture & Paths
-# ===================================================================
 ARCH := $(shell uname -m)
 ifeq ($(ARCH),x86_64)
 	ARCH := x86_64
