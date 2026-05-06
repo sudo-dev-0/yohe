@@ -1,21 +1,25 @@
 # -*- makefile -*- --- yohe, An editor made in C, for C.
 #
-#                         Version: v0.12                           ++++++++++++
+#                         Version: v0.13                           ++++++++++++
 #  
 #                   Documentation: Refer to README.                ++++++++++++
 #
 #  CHANGELOG:
 #
 #  ==== Added ==== 
+#	- (v0.13) Added some placeholder .c files to each library
+#	- (v0.13) Added library creation
 #	- (v0.11) Added Libraries/ subdirs
 #	- (v0.10) Added basic YohE project structure
 #	- (v0.10) Added a Makefile
 #
 #  ==== Fixed ====
+#	- (v0.13) Fixed `make strip` to be handled by make
 #	- (v0.12) Fixed gitignore by including bin/
 #	- (v0.11) Fixed `make strip` 
 #  
 #  ==== Removed ====
+#  	- (v0.13) Removed LIBRARY.c files
 #  	- (v0.11) Removed Core/ dir(s)
 #
 
@@ -33,7 +37,6 @@ CFLAGS_DEBUG_ADD   :=
 CFLAGS_RELEASE_ADD :=
 LDFLAGS_RELEASE    :=
 
-# Base flags (more portable)
 CFLAGS := -std=c11 -pipe -Wall -Wextra -Wpedantic \
 	  -Wformat=2 -Wformat-security -Wformat-overflow -Wformat-truncation \
 	  -Wnull-dereference -Wstack-protector -Walloca -Wvla \
@@ -66,19 +69,30 @@ else ifeq ($(ARCH),arm64)
 endif
 
 BIN_DIR          := bin/$(ARCH)
+LIB_OUT_DIR      := $(BIN_DIR)/libs
 TARGET           := $(BIN_DIR)/$(PROJECT_NAME)
 INTERMEDIATE_DIR := bin/intermediates
 
 APP_DIR       := YohE/App
 LIBRARIES_DIR := YohE/Libraries
 
-APP_SOURCES   := $(shell find $(APP_DIR)       -name '*.c' 2>/dev/null)
-LIB_SOURCES   := $(shell find $(LIBRARIES_DIR) -name '*.c' 2>/dev/null)
+APP_SOURCES   := $(shell find $(APP_DIR) -name '*.c' 2>/dev/null)
 
-SOURCES       := $(APP_SOURCES) $(LIB_SOURCES)
+APP_OBJECTS      := $(APP_SOURCES:%.c=$(INTERMEDIATE_DIR)/%.o)
+BACKEND_OBJECTS  := $(shell find $(LIBRARIES_DIR)/Backend/Source -name '*.c' 2>/dev/null | sed 's|^|$(INTERMEDIATE_DIR)/|;s|\.c$$|.o|')
+INPUT_OBJECTS    := $(shell find $(LIBRARIES_DIR)/Input/Source   -name '*.c' 2>/dev/null | sed 's|^|$(INTERMEDIATE_DIR)/|;s|\.c$$|.o|')
+UNICODE_OBJECTS  := $(shell find $(LIBRARIES_DIR)/Unicode/Source -name '*.c' 2>/dev/null | sed 's|^|$(INTERMEDIATE_DIR)/|;s|\.c$$|.o|')
 
-OBJECTS       := $(SOURCES:%.c=$(INTERMEDIATE_DIR)/%.o)
-DEPS          := $(OBJECTS:.o=.d)
+
+LIB_BACKEND := $(LIB_OUT_DIR)/libbackend.a
+LIB_INPUT   := $(LIB_OUT_DIR)/libinput.a
+LIB_UNICODE := $(LIB_OUT_DIR)/libunicode.a
+ALL_LIBS    := $(LIB_BACKEND) $(LIB_INPUT) $(LIB_UNICODE)
+
+get_lib_objs = $(shell find $(LIBRARIES_DIR)/$(1)/Source -name '*.c' 2>/dev/null | sed 's|^|$(INTERMEDIATE_DIR)/|;s|\.c$$|.o|')
+
+OBJECTS := $(APP_OBJECTS) $(BACKEND_OBJECTS) $(INPUT_OBJECTS) $(UNICODE_OBJECTS)
+DEPS    := $(OBJECTS:.o=.d)
 
 INCLUDES := -I$(APP_DIR) \
 	    -I$(APP_DIR)/Headers \
@@ -87,10 +101,19 @@ INCLUDES := -I$(APP_DIR) \
 	    -I$(LIBRARIES_DIR)/Input/Source \
 	    -I$(LIBRARIES_DIR)/Unicode/Source
 
-$(INTERMEDIATE_DIR) $(BIN_DIR):
+$(INTERMEDIATE_DIR) $(BIN_DIR) $(LIB_OUT_DIR):
 	mkdir -p $@
 
 all: $(TARGET)
+
+$(LIB_BACKEND): $(BACKEND_OBJECTS) | $(LIB_OUT_DIR)
+		ar rcs $@ $^
+
+$(LIB_INPUT): $(INPUT_OBJECTS) | $(LIB_OUT_DIR)
+		ar rcs $@ $^
+
+$(LIB_UNICODE): $(UNICODE_OBJECTS) | $(LIB_OUT_DIR)
+		ar rcs $@ $^
 
 debug: CFLAGS += $(CFLAGS_DEBUG_ADD)
 debug: LDFLAGS += $(CFLAGS_DEBUG_ADD)
@@ -100,8 +123,8 @@ release: CFLAGS += $(CFLAGS_RELEASE_ADD)
 release: LDFLAGS += $(LDFLAGS_RELEASE)
 release: $(TARGET)
 
-$(TARGET): $(OBJECTS) | $(BIN_DIR)
-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
+$(TARGET): $(APP_OBJECTS) $(ALL_LIBS) | $(BIN_DIR)
+	$(CC) $(APP_OBJECTS) -o $@ -L$(LIB_OUT_DIR) -lbackend -linput -lunicode $(LDFLAGS)
 
 $(INTERMEDIATE_DIR)/%.o: %.c | $(INTERMEDIATE_DIR)
 	@mkdir -p $(dir $@)
