@@ -1,12 +1,13 @@
 # -*- makefile -*- --- yohe, An editor made in C, for C.
 #
-#                         Version: v0.13                           ++++++++++++
+#                         Version: v0.14                           ++++++++++++
 #  
 #                   Documentation: Refer to README.                ++++++++++++
 #
 #  CHANGELOG:
 #
 #  ==== Added ==== 
+#	- (v0.14) Added some test.make files for testing libraries
 #	- (v0.13) Added some placeholder .c files to each library
 #	- (v0.13) Added library creation
 #	- (v0.11) Added Libraries/ subdirs
@@ -14,6 +15,7 @@
 #	- (v0.10) Added a Makefile
 #
 #  ==== Fixed ====
+#  	- (v0.14) Fixed Library/ files to not be CAPITALIZED
 #	- (v0.13) Fixed `make strip` to be handled by make
 #	- (v0.12) Fixed gitignore by including bin/
 #	- (v0.11) Fixed `make strip` 
@@ -24,7 +26,7 @@
 #
 
 PROJECT_NAME    := yohe
-PROJECT_VERSION := v0.12
+PROJECT_VERSION := v0.14
 
 CSTD := c11
 COPT := 2 	# Release optimization.
